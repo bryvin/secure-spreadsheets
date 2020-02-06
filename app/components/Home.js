@@ -17,41 +17,44 @@ export default class Home extends React.Component {
 
   componentDidMount() {
     $(function() {
-      $("#spreadsheet").kendoSpreadsheet({
+      $('#spreadsheet').kendoSpreadsheet({
         rows: this.numRows,
         columns: this.numColumns,
         change: this.onChange,
-        render: () => { 
-          if(this.needsDimensionUpdate) {
-            // make sure this only recreates the sheet once per dimension change
+        render: () => {
+          if (this.needsDimensionUpdate) {
+            /**
+             * Make sure this only recreates the sheet once per dimension change.
+             */
             this.needsDimensionUpdate = false;
 
-            // rebuild the spreadsheet off current data
+            /** Rebuild the spreadsheet off current data. */
             this.getSpreadsheet().fromJSON(this.getJSON());
 
-            // make sure to save to note
+            /** Make sure to save to note. */
             this.onChange();
           }
         },
-        changeFormat: this.onChange, // triggered when cell structure changes (currency, date, etc)
+        changeFormat: this.onChange, /** Triggered when cell structure changes (currency, date, etc) */
         excelImport: (event) => {
-          // Excel import functionality has been disabled completely.
-          // We'll keep this code around below incase we enable it again in the future.
-          if(!confirm("Importing will completely overwrite any existing data. Are you sure you want to continue?")) {
+          /**
+           * Excel import functionality has been disabled completely. We'll keep
+           * this code around below incase we enable it again in the future.
+           */
+          if (!confirm('Importing will completely overwrite any existing data. Are you sure you want to continue?')) {
             event.preventDefault();
             return;
           }
 
-          if(!confirm("Note that importing from Excel may cause very large file sizes within Standard Notes, which may affect performance. You may continue with import, but if you notice performance issues, it is recommended you manually import data instead.")) {
+          if (!confirm('Note that importing from Excel may cause very large file sizes within Standard Notes, which may affect performance. You may continue with import, but if you notice performance issues, it is recommended you manually import data instead.')) {
             event.preventDefault();
             return;
           }
 
           event.promise.done(() => {
-            console.log("Import complete");
+            console.log('Import complete');
             this.onChange();
           })
-
         },
         insertSheet: this.onChange,
         removeSheet: this.onChange,
@@ -74,23 +77,23 @@ export default class Home extends React.Component {
 
       this.reloadSpreadsheetContent();
 
-      $(".k-item, .k-button").click((e) => {
+      $('.k-item, .k-button').click((e) => {
         setTimeout(() => {
           this.onChange();
         }, 10);
       });
 
-      // remove import option
-      $(".k-upload-button").remove();
+      /** Remove import option. */
+      $('.k-upload-button').remove();
     }.bind(this));
   }
 
   getSpreadsheet() {
-    return $("#spreadsheet").getKendoSpreadsheet();
+    return $('#spreadsheet').getKendoSpreadsheet();
   }
 
-  onChange = (event) => {
-    if(!this.note) {
+  onChange = event => {
+    if (!this.note) {
       return;
     }
 
@@ -98,50 +101,51 @@ export default class Home extends React.Component {
   }
 
   saveSpreadsheet() {
-    // Be sure to capture this object as a variable, as this.note may be reassigned in `streamContextItem`, so by the time
-    // you modify it in the presave block, it may not be the same object anymore, so the presave values will not be applied to
-    // the right object, and it will save incorrectly.
-    let note = this.note;
+    /**
+     * Be sure to capture this object as a variable, as this.note may be
+     * reassigned in `streamContextItem`, so by the time you modify it in the
+     * presave block, it may not be the same object anymore, so the presave
+     * values will not be applied to the right object, and it will save
+     * incorrectly.
+     */
+    const note = this.note;
 
     this.componentManager.saveItemWithPresave(note, () => {
       note.content.preview_html = null;
-      note.content.preview_plain = "Created with Secure Spreadsheets";
+      note.content.preview_plain = 'Created with Secure Spreadsheets';
 
-      var json = this.getJSON();
-      var content = JSON.stringify(json);
+      const json = this.getJSON();
+      const content = JSON.stringify(json);
       note.content.text = content;
     });
   }
 
   getJSON() {
-    var json = this.getSpreadsheet().toJSON();
+    const json = this.getSpreadsheet().toJSON();
     json.rows = this.numRows;
     json.columns = this.numColumns;
     return json;
   }
 
   connectToBridge() {
-    var permissions = [
+    const permissions = [
       {
-        name: "stream-context-item"
+        name: 'stream-context-item'
       }
-    ]
+    ];
 
     this.componentManager = new ComponentManager(permissions, () => {
-      // on ready
-      var platform = this.componentManager.platform;
-      if(platform) {
+      const platform = this.componentManager.platform;
+      if (platform) {
         document.body.classList.add(platform);
       }
     });
 
-    // componentManager.loggingEnabled = true;
-
     this.componentManager.streamContextItem((note) => {
       this.note = note;
 
-       // Only update UI on non-metadata updates.
-      if(note.isMetadataUpdate) {
+      /** Only update UI on non-metadata updates. */
+      if (note.isMetadataUpdate) {
         return;
       }
 
@@ -150,24 +154,26 @@ export default class Home extends React.Component {
   }
 
   reloadSpreadsheetContent() {
-    if(!this.note) {
+    if (!this.note) {
       return;
     }
 
-    var text = this.note.content.text;
-    if(text.length == 0) {
+    const text = this.note.content.text;
+    if (text.length == 0) {
       return;
     }
 
-    var json = JSON.parse(text);
-    if(json.rows) { this.numRows = json.rows; }
-    if(json.columns) { this.numColumns = json.columns; }
+    const json = JSON.parse(text);
+    if (json.rows) {
+      this.numRows = json.rows;
+    }
+    if (json.columns) {
+      this.numColumns = json.columns;
+    }
     this.getSpreadsheet().fromJSON(json);
   }
 
   render() {
-    return (
-      <div></div>
-    )
+    return <div></div>
   }
 }
